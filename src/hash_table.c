@@ -1,7 +1,7 @@
 #include "hash_table.h"
 
 int hash_function(long key) {
-  int hash;
+  int hash = 0;
 
   if (key == 0) {
     return 0;
@@ -79,22 +79,39 @@ char insert_chunk_into_table(struct chunks *chunk, h_table *table) {
   return 0;
 }
 
-int main(void) {
+chunks *get_chunk_from_table(long key, h_table *table) {
+  chunks *new_chunk = NULL;
+  int hashed_key = hash_function(key);
+  new_chunk = &table->chunk[hashed_key];
 
-  void *memory = mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-  
-  void *memory_2 = mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-  
-  h_table *table = create_hash_table(2);
-  chunks *chunk = create_chunk((long)memory, memory);
-  chunks *chunk_2 = create_chunk((long)memory_2, memory_2);
+  return new_chunk;
+}
 
-  insert_chunk_into_table(chunk, table);
-  insert_chunk_into_table(chunk_2, table);  
-  printf("Table size: %d Table nbr: %d\n", table->size, table->nbr_chunks);
-  for (int i = 0; i < 2; i++) {
-    printf("Key: [%d] -> Element: [%ld]\n", i, table->chunk[i].key);
+void free_chunk(long key, h_table *table) {
+  int hashed_key = hash_function(key);
+
+  table->chunk[hashed_key].memory = 0;
+  table->chunk[hashed_key].c_info.used = 0;
+}
+
+char is_chunk_used(long key, h_table *table) {
+  int hashed_key = hash_function(key);
+
+  return table->chunk[hashed_key].c_info.used;  
+}
+
+//TODO: understand how unmap works
+void delete_hash_table(h_table *table) {
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    table->chunk[i].key = 0;
+    table->chunk[i].c_info.used = 0;
+    table->chunk[i].c_info.start = 0;
+    table->chunk[i].c_info.size = 0;
+    table->chunk[i].c_info.end = 0;
+    table->chunk[i].memory = 0;
   }
-
-  return 0;
+  table->size = 0;
+  table->nbr_chunks = 0;
+  munmap(table, sizeof(table));
+  table = NULL;
 }
