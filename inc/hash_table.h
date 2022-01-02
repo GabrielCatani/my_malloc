@@ -6,7 +6,11 @@
 typedef struct h_table h_table;
 typedef struct chunk_info chunk_info;
 typedef struct chunks chunks;
-
+struct h_table {
+  chunks *chunk;
+  int size;
+  int nbr_chunks;
+};
 struct chunk_info {
   char used;
   long start;
@@ -20,20 +24,13 @@ struct chunks {
   void *memory;
 };
 
-struct h_table {
-  chunks *chunk;
-  int size;
-  int nbr_chunks;
-};
-
 int hash_function(long key);
 h_table *create_hash_table(int table_size);
-chunks *create_chunk(long key, void *memory);
-void handle_colision(int hashed_key, struct chunks *chunk, h_table *table);
-char insert_chunk_into_table(struct chunks *chunk, h_table *table);
-chunks *get_chunk_from_table(long key, h_table *table);
+void handle_colision(int hashed_key, chunks *chunk, h_table *table);
 void free_chunk(long key, h_table *table);
+void delete_hash_table(h_table **table);
+chunks *create_chunk(long key, void *memory);
+char insert_chunk_into_table(chunks *chunk, h_table *table);
+chunks *get_chunk_from_table(long key, h_table *table);
 char is_chunk_used(long key, h_table *table);
-//TODO
-void delete_hash_table(h_table *table);
 #endif

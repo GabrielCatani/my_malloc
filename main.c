@@ -77,9 +77,7 @@ int main(void) {
   }
 
   //Test delete_hash_table
-  delete_hash_table(table);
-  munmap(table, sizeof(table));
-  printf("%lu\n", sizeof(table));
+  delete_hash_table(&table);
   if (!table) {
     printf("delete_hash_table: \033[0;32m[OK]\033[0m\n");
   }
