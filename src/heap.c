@@ -1,4 +1,5 @@
-#include "hash_table.h"
+#include "heap.h"
+#include "my_malloc.h"
 
 int hash_function(long key) {
   int hash = 0;
@@ -15,9 +16,9 @@ int hash_function(long key) {
   return hash;
 }
 
-h_table *create_hash_table(int table_size) {
-  h_table *table = NULL;
-
+heap *create_heap(int table_size) {
+  heap *table = NULL;
+  
   table = mmap(0, table_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   if (table == MAP_FAILED) {
     return table;
@@ -28,11 +29,26 @@ h_table *create_hash_table(int table_size) {
   }  
   table->size = table_size;
   table->nbr_chunks = 0;
+  table->next = NULL;
 
   return table;
 }
 
-void handle_colision(int hashed_key, struct chunks *chunk, h_table *table) {
+void append_new_heap(heap *table) {
+  if (!head) {
+    head = table;
+    return;
+  }
+
+  heap *ptr = head;
+  while(ptr->next) {
+    ptr = ptr->next;
+  }
+
+  ptr->next = table;
+}
+
+void handle_colision(int hashed_key, struct chunks *chunk, heap *table) {
   for (int i = hashed_key; i < table->size; i++) {
     if (table->chunk[i].memory == NULL) {
       table->chunk[i] = *chunk;
@@ -44,14 +60,18 @@ void handle_colision(int hashed_key, struct chunks *chunk, h_table *table) {
   }
 }
 
-void free_chunk(long key, h_table *table) {
+void free_chunk(long key, heap *table) {
   int hashed_key = hash_function(key);
-
-  table->chunk[hashed_key].memory = 0;
+  char *ptr = (char *)table->chunk[hashed_key].memory;
+  
+  for (int i = 0; i < table->chunk[hashed_key].c_info.size; i++) {
+    ptr[i] = 0;
+  }
+  
   table->chunk[hashed_key].c_info.used = 0;
 }
 
-void delete_hash_table(h_table **table) {
+void delete_single_heap(heap **table) {
   for (int i = 0; i < TABLE_SIZE; i++) {
     (*table)->chunk[i].key = 0;
     (*table)->chunk[i].c_info.used = 0;
@@ -62,11 +82,22 @@ void delete_hash_table(h_table **table) {
   }
   (*table)->size = 0;
   (*table)->nbr_chunks = 0;
+  (*table)->next = NULL;
   munmap((*table)->chunk, sizeof((*table)->chunk));
   munmap((*table), sizeof((*table)));
   (*table) = NULL;
 }
 
+void delete_full_heap() {
+  heap **ptr = &head;
+  heap *ptr_next = NULL;
+  
+  while ((*ptr)) {
+    ptr_next = (*ptr)->next;
+    delete_single_heap(ptr);
+    (*ptr) = ptr_next;
+  }
+}
 chunks *create_chunk(long key, void *memory) {
   chunks *chunk = NULL;
   chunk_info c_info; 
@@ -89,7 +120,7 @@ chunks *create_chunk(long key, void *memory) {
   return chunk;
 }
 
-char insert_chunk_into_table(chunks *chunk, h_table *table) {
+char insert_chunk_into_heap(chunks *chunk, heap *table) {
   //check if table is not full
   if (table->size == table->nbr_chunks) {
     return 1;
@@ -111,7 +142,7 @@ char insert_chunk_into_table(chunks *chunk, h_table *table) {
   return 0;
 }
 
-chunks *get_chunk_from_table(long key, h_table *table) {
+chunks *get_chunk_from_heap(long key, heap *table) {
   chunks *new_chunk = NULL;
   int hashed_key = hash_function(key);
   new_chunk = &table->chunk[hashed_key];
@@ -119,7 +150,7 @@ chunks *get_chunk_from_table(long key, h_table *table) {
   return new_chunk;
 }
 
-char is_chunk_used(long key, h_table *table) {
+char is_chunk_used(long key, heap *table) {
   int hashed_key = hash_function(key);
 
   return table->chunk[hashed_key].c_info.used;  
