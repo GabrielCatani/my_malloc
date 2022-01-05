@@ -9,12 +9,12 @@ int main(void) {
 
   void *memory_3 = mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);  
   
-  heap *table = create_heap(TABLE_SIZE);
+  //heap *table = create_heap(TABLE_SIZE);
   chunks *chunk = create_chunk((long)memory, memory);
   chunks *chunk_2 = create_chunk((long)memory_2, memory_2);
   chunks *chunk_3 = create_chunk((long)memory_3, memory_3);
 
-  append_new_heap(table);
+  append_new_heap(TABLE_SIZE);
   
   heap *ptr = head;
   while (ptr) {
@@ -28,15 +28,15 @@ int main(void) {
   printf("=======Unit Tests=======\n");
   
   //Tests insert_chunk_into_table
-  insert_chunk_into_heap(chunk, table);
-  insert_chunk_into_heap(chunk_2, table);
-  insert_chunk_into_heap(chunk_3, table);
+  insert_chunk_into_heap(chunk, head);
+  insert_chunk_into_heap(chunk_2, head);
+  insert_chunk_into_heap(chunk_3, head);
 
   int counter = 0;
   for (int i = 0; i < TABLE_SIZE; i++) {
-    if (table->chunk[i].key == chunk->key ||
-	table->chunk[i].key == chunk_2->key ||
-	table->chunk[i].key == chunk_3->key) {
+    if (head->chunk[i].key == chunk->key ||
+	head->chunk[i].key == chunk_2->key ||
+	head->chunk[i].key == chunk_3->key) {
       counter++;
     }
   }
@@ -57,7 +57,7 @@ int main(void) {
   */
 
   //Test get_chunk_from_table
-  chunks *got_chunk = get_chunk_from_heap((long)memory, table);
+  chunks *got_chunk = get_chunk_from_heap((long)memory, head);
   if (got_chunk->c_info.size == chunk->c_info.size &&
   got_chunk->c_info.start == chunk->c_info.start) {
     printf("get_chunk_from_heap: \033[0;32m[OK]\033[0m\n");  
@@ -69,10 +69,10 @@ int main(void) {
   //Test free_chunk
   int hashed_key = hash_function((long)memory);
 
-  free_chunk((long)memory, table);
+  free_chunk((long)memory, head);
 
-  if (table->chunk[hashed_key].c_info.used == 0 &&
-      (char)table->chunk[hashed_key].memory == 0) {
+  if (head->chunk[hashed_key].c_info.used == 0 &&
+      (char)head->chunk[hashed_key].memory == 0) {
     printf("free_chunk: \033[0;32m[OK]\033[0m\n");  
   }
   else {
@@ -80,7 +80,7 @@ int main(void) {
   }
 
   //Test is_chunk_used
-  if (!is_chunk_used(hashed_key, table)) {
+  if (!is_chunk_used(hashed_key, head)) {
     printf("chunk_used: \033[0;32m[OK]\033[0m\n");
   }
   else {

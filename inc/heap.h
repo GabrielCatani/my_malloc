@@ -28,7 +28,7 @@ struct chunks {
 
 int hash_function(long key);
 heap *create_heap(int table_size);
-void append_new_heap(heap *table);
+void append_new_heap(int table_size);
 void handle_colision(int hashed_key, chunks *chunk, heap *table);
 void free_chunk(long key, heap *table);
 void delete_single_heap(heap **table);

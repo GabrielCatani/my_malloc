@@ -34,9 +34,9 @@ heap *create_heap(int table_size) {
   return table;
 }
 
-void append_new_heap(heap *table) {
+void append_new_heap(int table_size) {
   if (!head) {
-    head = table;
+    head = create_heap(table_size);
     return;
   }
 
@@ -45,7 +45,7 @@ void append_new_heap(heap *table) {
     ptr = ptr->next;
   }
 
-  ptr->next = table;
+  ptr->next = create_heap(table_size);
 }
 
 void handle_colision(int hashed_key, struct chunks *chunk, heap *table) {
