@@ -16,142 +16,192 @@ int hash_function(long key) {
   return hash;
 }
 
-heap *create_heap(int table_size) {
-  heap *table = NULL;
-  
-  table = mmap(0, table_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-  if (table == MAP_FAILED) {
-    return table;
-  }
-  table->chunk = mmap(0, table_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-  if (table->chunk == MAP_FAILED) {
-    return table;
-  }  
-  table->size = table_size;
-  table->nbr_chunks = 0;
-  table->next = NULL;
-
-  return table;
-}
-
-void append_new_heap(int table_size) {
-  if (!head) {
-    head = create_heap(table_size);
-    return;
-  }
-
-  heap *ptr = head;
-  while(ptr->next) {
-    ptr = ptr->next;
-  }
-
-  ptr->next = create_heap(table_size);
-}
-
-void handle_colision(int hashed_key, struct chunks *chunk, heap *table) {
-  for (int i = hashed_key; i < table->size; i++) {
+int handle_colision(int hashed_key, heap *table) {
+  for (int i = hashed_key; i < table->capacity; i++) {
     if (table->chunk[i].memory == NULL) {
-      table->chunk[i] = *chunk;
-      return;
+      return i;
     }
-    else if (i == (table->size - 1)) {
+    else if (i == (table->capacity - 1)) {
 	i = -1;
     }
   }
+
+  return -1;
 }
 
-void free_chunk(long key, heap *table) {
-  int hashed_key = hash_function(key);
-  char *ptr = (char *)table->chunk[hashed_key].memory;
-  
-  for (int i = 0; i < table->chunk[hashed_key].c_info.size; i++) {
-    ptr[i] = 0;
+void init_heap(int size) {
+  heap_head = mmap(0, sizeof(heap *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  heap_head->chunk = mmap(0, sizeof(chunks *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  heap_head->chunk = mmap(0, sizeof(chunks) * TABLE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  heap_head->capacity = TABLE_SIZE;
+  heap_head->nbr_chunks = 0;
+  heap_head->memory = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  heap_head->free_size = size;
+  heap_head->next = NULL;
+}
+
+heap *append_new_heap(int size) {
+  heap *ptr = heap_head;
+  while (ptr->next) {
+    ptr = ptr->next;
   }
-  
-  table->chunk[hashed_key].c_info.used = 0;
+  ptr->next = mmap(0, sizeof(heap *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  ptr->next->chunk = mmap(0, sizeof(chunks *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  ptr->next->chunk = mmap(0, sizeof(chunks) * TABLE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  ptr->next->capacity = TABLE_SIZE;
+  ptr->next->nbr_chunks = 0;
+  ptr->next->memory = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  ptr->next->free_size = size;
+  ptr->next->next = NULL;
+
+  return ptr->next;
 }
 
-void delete_single_heap(heap **table) {
-  for (int i = 0; i < TABLE_SIZE; i++) {
-    (*table)->chunk[i].key = 0;
-    (*table)->chunk[i].c_info.used = 0;
-    (*table)->chunk[i].c_info.start = 0;
-    (*table)->chunk[i].c_info.size = 0;
-    (*table)->chunk[i].c_info.end = 0;
-    munmap((*table)->chunk[i].memory, sizeof((*table)->chunk[i].memory));
+char is_heap_new(heap *begin) {
+  if(!begin) {
+    return -1;
   }
-  (*table)->size = 0;
-  (*table)->nbr_chunks = 0;
-  (*table)->next = NULL;
-  munmap((*table)->chunk, sizeof((*table)->chunk));
-  munmap((*table), sizeof((*table)));
-  (*table) = NULL;
-}
-
-void delete_full_heap() {
-  heap **ptr = &head;
-  heap *ptr_next = NULL;
-  
-  while ((*ptr)) {
-    ptr_next = (*ptr)->next;
-    delete_single_heap(ptr);
-    (*ptr) = ptr_next;
-  }
-}
-chunks *create_chunk(long key, void *memory) {
-  chunks *chunk = NULL;
-  chunk_info c_info; 
-
-  c_info.used = 1;
-  c_info.start = key;
-  c_info.size = (int)sizeof(memory);
-  c_info.end = c_info.start + c_info.size;
-  
-  chunk = mmap(0, sizeof(chunks), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-
-  if (chunk == MAP_FAILED) {
-    return NULL;
-  }
-
-  chunk->key = key;
-  chunk->memory = memory;
-  chunk->c_info = c_info;
-
-  return chunk;
-}
-
-char insert_chunk_into_heap(chunks *chunk, heap *table) {
-  //check if table is not full
-  if (table->size == table->nbr_chunks) {
+  if (begin &&
+      begin->nbr_chunks == 0) {
     return 1;
   }
-  //hash key from chunk
-  int hashed_key = 0;
-  hashed_key = hash_function(chunk->key);
-  //handle colision
-  if (table->chunk[hashed_key].memory != NULL) {
-    handle_colision(hashed_key, chunk, table);
-  }
-  else {
-    table->chunk[hashed_key] = *chunk;  
-  }
-
-  //add nbr_chunks
-  table->nbr_chunks++;
 
   return 0;
 }
 
-chunks *get_chunk_from_heap(long key, heap *table) {
-  chunks *new_chunk = NULL;
-  int hashed_key = hash_function(key);
-  new_chunk = &table->chunk[hashed_key];
+char create_first_chunk(heap *begin, int size) {
+  char *ref_ptr = begin->memory + size;
+  int hashed_key = 0;
+  chunks new_chunk;
+  chunks rest_of_heap;
+  
+  new_chunk.key = (long)begin->memory;
+  hashed_key = hash_function(new_chunk.key);
+  hashed_key = handle_colision(hashed_key, begin);
+  if (hashed_key == -1) {
+    return 1;
+  }
+  new_chunk.size = size;
+  new_chunk.free = 0;
+  new_chunk.memory = begin->memory;
 
-  return new_chunk;
+  begin->chunk[hashed_key] = new_chunk;
+
+
+  rest_of_heap.key = ((long)begin->memory + size);
+  hashed_key = hash_function(rest_of_heap.key);
+  hashed_key = handle_colision(hashed_key, begin);
+  if (hashed_key == -1) {
+    return 1;
+  }
+  rest_of_heap.size = begin->free_size - size;
+  begin->free_size = rest_of_heap.size; 
+  rest_of_heap.free = 1;
+  rest_of_heap.memory = (void *)ref_ptr;
+
+  begin->chunk[hashed_key] = rest_of_heap;
+  begin->nbr_chunks = 2;
+
+  return 0;
 }
 
-char is_chunk_used(long key, heap *table) {
-  int hashed_key = hash_function(key);
+heap *find_free_heap(int size) {
+  heap *ptr = heap_head;
+  
+  while (ptr) {
+    if (ptr->free_size >= size) {
+      return ptr;
+    }
+    ptr = ptr->next;
+  }
+  ptr = append_new_heap(size);
+  return ptr;
+}
 
-  return table->chunk[hashed_key].c_info.used;  
+char add_new_chunk(int size) {
+  heap *ptr_heap = find_free_heap(size);
+  char *ref_ptr = NULL;
+  int hashed_key = 0;
+  int original_size = 0;
+  
+  if (ptr_heap->nbr_chunks == 0) {
+    create_first_chunk(ptr_heap, size);
+    return 0;
+  }
+  else {
+    for (int i = 0; i < TABLE_SIZE; i++) {
+      if (ptr_heap->chunk[i].size == size &&
+	  ptr_heap->chunk[i].free) {
+        ptr_heap->chunk[i].free = 0;
+	ptr_heap->free_size -= size;
+	return 0;
+      }
+      else if (ptr_heap->chunk[i].size > size &&
+	  ptr_heap->chunk[i].free) {
+	original_size = ptr_heap->chunk[i].size;
+        ptr_heap->chunk[i].free = 0;
+	ptr_heap->chunk[i].size = size;
+
+	ref_ptr = ptr_heap->chunk[i].memory;
+	ref_ptr = ref_ptr + size;
+	hashed_key = hash_function((long)ref_ptr);
+	hashed_key = handle_colision(hashed_key, ptr_heap);
+
+	ptr_heap->chunk[hashed_key].key = (long)ref_ptr;
+	ptr_heap->chunk[hashed_key].size = original_size - size; 
+	ptr_heap->chunk[hashed_key].free = 1;
+	ptr_heap->chunk[hashed_key].memory = ref_ptr;
+	ptr_heap->free_size -= size;
+	ptr_heap->nbr_chunks += 1;	
+	return 0;
+      }
+    }   
+  }
+  return 1;
+}
+
+void print_heap(heap *begin) {
+  //Print Header
+  printf("==========HEAP Header==========\n");
+  printf("HEAP Free Space: %d\nNBR of Chunks: %d\n\n", begin->free_size, begin->nbr_chunks);
+
+  
+  //Print Visual representation
+  int heap_size = 0;
+  long mem_ref = (long)begin->memory;
+  int chunk_index = 0;
+  
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    heap_size += begin->chunk[i].size;
+  }
+
+  int index = 0;
+  while (index < heap_size) {
+    for (int i = 0; i < TABLE_SIZE; i++) {
+      if (begin->chunk[i].key == mem_ref) {
+	chunk_index = i;
+	break;
+      }
+    }
+
+    for (int w = 0; w < begin->chunk[chunk_index].size; w++) {
+      if (begin->chunk[chunk_index].free) {
+        printf("\033[0;32m0\033[0m");
+      }
+      else {
+        printf("\033[0;31m0\033[0m");
+      }
+      index++;
+      mem_ref++;
+    }
+    printf(" | ");
+  }
+  printf("\n\n===============================\n");
+
+  //Print Chunks details
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    if (begin->chunk[i].size != 0) {
+      printf("Chunk key: %lu -> Size: %d -> is Free: %d -> Memory: %s\n", begin->chunk[i].key, begin->chunk[i].size, begin->chunk[i].free, (char *)begin->chunk[i].memory);
+    }
+  }  
 }

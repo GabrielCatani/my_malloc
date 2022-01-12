@@ -3,38 +3,33 @@
 #define TABLE_SIZE  10
 #include <stdio.h>
 #include <sys/mman.h>
-typedef struct h_table heap;
-typedef struct chunk_info chunk_info;
+typedef struct heap heap;
 typedef struct chunks chunks;
-struct h_table {
+struct heap {
   chunks *chunk;
-  int size;
+  int capacity;
   int nbr_chunks;
+  void *memory;
+  int free_size;
   heap *next;
-};
-
-struct chunk_info {
-  char used;
-  long start;
-  int size;
-  long end;
 };
 
 struct chunks {
   long key;
-  chunk_info c_info;
+  int size;
+  char free;
   void *memory;
 };
-
+extern heap *heap_head;
 int hash_function(long key);
-heap *create_heap(int table_size);
-void append_new_heap(int table_size);
-void handle_colision(int hashed_key, chunks *chunk, heap *table);
-void free_chunk(long key, heap *table);
-void delete_single_heap(heap **table);
-void delete_full_heap();
-chunks *create_chunk(long key, void *memory);
-char insert_chunk_into_heap(chunks *chunk, heap *table);
-chunks *get_chunk_from_heap(long key, heap *table);
-char is_chunk_used(long key, heap *table);
+int handle_colision(int hashed_key, heap *table);
+void init_heap(int size);
+heap *append_new_heap(int size);
+char is_heap_new(heap *begin);
+char create_first_chunk(heap *begin, int size);
+heap *find_free_heap(int size);
+char add_new_chunk(int size);
+void print_heap(heap *begin);
+
+//New heap, always with size * TABLE_SIZE
 #endif
