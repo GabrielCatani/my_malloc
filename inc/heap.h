@@ -30,6 +30,7 @@ char create_first_chunk(heap *begin, int size);
 heap *find_free_heap(int size);
 char add_new_chunk(int size);
 void print_heap(heap *begin);
-
+void free_chunk(void *memory);
+int get_chunk_size(void *memory);
 //New heap, always with size * TABLE_SIZE
 #endif

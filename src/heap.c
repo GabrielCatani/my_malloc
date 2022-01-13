@@ -201,7 +201,40 @@ void print_heap(heap *begin) {
   //Print Chunks details
   for (int i = 0; i < TABLE_SIZE; i++) {
     if (begin->chunk[i].size != 0) {
-      printf("Chunk key: %lu -> Size: %d -> is Free: %d -> Memory: %s\n", begin->chunk[i].key, begin->chunk[i].size, begin->chunk[i].free, (char *)begin->chunk[i].memory);
+      printf("Chunk key: %lu -> Size: %d -> is Free: %d -> Memory: %s\n", begin->chunk[i].key, begin->chunk[i].size, begin->chunk[i].free, begin->chunk[i].memory);
     }
-  }  
+  }
+}
+
+void free_chunk(void *memory) {
+  char *ptr_mem = (char *)memory;
+  int chunk_size = get_chunk_size(memory);
+
+  for (int i = 0; i < chunk_size; i++) {
+    ptr_mem[i] = '\0';
+  }
+}
+
+int get_chunk_size(void *memory) {
+  int hashed_key = hash_function((long)memory);
+  heap *ptr_heap = heap_head;
+  int chunk_size = 0;
+  
+  while (ptr_heap) {
+    if (ptr_heap->chunk[hashed_key].key == (long)memory) {
+      chunk_size = ptr_heap->chunk[hashed_key].size;
+      return chunk_size;
+    }
+    else {
+      for (int i = 0; i < TABLE_SIZE; i++) {
+        if (ptr_heap->chunk[i].key == (long)memory) {
+          chunk_size = ptr_heap->chunk[i].size;
+	  return chunk_size;
+	}
+      }
+    }
+    ptr_heap = ptr_heap->next;
+  }
+
+  return -1;
 }
