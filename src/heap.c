@@ -30,28 +30,47 @@ int handle_colision(int hashed_key, heap *table) {
 }
 
 void init_heap(int size) {
+  int heap_size = 0;
+
+  if (size >= MMAP_THRESHOLD) {
+    heap_size = size;
+  }
+  else {
+    heap_size = MMAP_THRESHOLD;
+  }
+  
   heap_head = mmap(0, sizeof(heap *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   heap_head->chunk = mmap(0, sizeof(chunks *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   heap_head->chunk = mmap(0, sizeof(chunks) * TABLE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   heap_head->capacity = TABLE_SIZE;
   heap_head->nbr_chunks = 0;
-  heap_head->memory = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-  heap_head->free_size = size;
+  heap_head->memory = mmap(0, heap_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  heap_head->free_size = heap_size;
   heap_head->next = NULL;
 }
 
 heap *append_new_heap(int size) {
   heap *ptr = heap_head;
+  int heap_size = 0;
+  
   while (ptr->next) {
     ptr = ptr->next;
   }
+
+  if (size >= MMAP_THRESHOLD) {
+    heap_size = size;
+  }
+  else {
+    heap_size = MMAP_THRESHOLD;
+  }
+  
   ptr->next = mmap(0, sizeof(heap *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   ptr->next->chunk = mmap(0, sizeof(chunks *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   ptr->next->chunk = mmap(0, sizeof(chunks) * TABLE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   ptr->next->capacity = TABLE_SIZE;
   ptr->next->nbr_chunks = 0;
-  ptr->next->memory = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-  ptr->next->free_size = size;
+  ptr->next->memory = mmap(0, heap_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  ptr->next->free_size = heap_size;
   ptr->next->next = NULL;
 
   return ptr->next;
@@ -160,12 +179,68 @@ char add_new_chunk(int size) {
   return 1;
 }
 
+void print_chunk(chunks *chunk) {
+  printf("==========CHUNK Header==========\n");
+  printf("Chunk Key: %lu\nSize: %d\n", chunk->key, chunk->size);
+  
+  if (chunk->free) {
+    printf("Is Free: Yes\n");
+  }
+  else {
+    printf("Is Free: No\n");
+  }
+  
+  for (int i = 0; i < chunk->size; i++) {
+    if (chunk->free) {
+      printf("\033[0;32m0\033[0m");
+    }
+    else {
+      printf("\033[0;31m0\033[0m");
+    }
+  }
+
+  printf("\n\n===============================\n");  
+  
+}
+
 void print_heap(heap *begin) {
+  printf("==========HEAP Header==========\n");
+  printf("HEAP Free Space: %d\nNBR of Chunks: %d\n\n", begin->free_size, begin->nbr_chunks);
+
+  int heap_size = 0;
+  
+  for (int i = 0; i < TABLE_SIZE; i++) {
+    heap_size += begin->chunk[i].size;
+  }  
+
+  long mem_ref = (long)begin->memory;
+  while (begin) {
+    for (int i = 0; i < heap_size; i++) {
+      for (int w = 0; w < begin->capacity; w++) {
+        if (begin->chunk[w].key == mem_ref) {
+	  if (begin->chunk[w].free) {
+            printf("\033[0;32m[ %d ]\033[0m", begin->chunk[w].size);
+	  }
+	  else {
+            printf("\033[0;31m[ %d ]\033[0m", begin->chunk[w].size);
+	  }
+	  mem_ref += begin->chunk[w].size;
+          break;
+	}
+      } 
+    }
+   
+    begin = begin->next;
+  }
+
+  printf("\n\n===============================\n");    
+}
+
+void print_detailed_heap(heap *begin) {
   //Print Header
   printf("==========HEAP Header==========\n");
   printf("HEAP Free Space: %d\nNBR of Chunks: %d\n\n", begin->free_size, begin->nbr_chunks);
 
-  
   //Print Visual representation
   int heap_size = 0;
   long mem_ref = (long)begin->memory;
@@ -174,7 +249,7 @@ void print_heap(heap *begin) {
   for (int i = 0; i < TABLE_SIZE; i++) {
     heap_size += begin->chunk[i].size;
   }
-
+  
   int index = 0;
   while (index < heap_size) {
     for (int i = 0; i < TABLE_SIZE; i++) {
@@ -197,7 +272,7 @@ void print_heap(heap *begin) {
     printf(" | ");
   }
   printf("\n\n===============================\n");
-
+  
   //Print Chunks details
   for (int i = 0; i < TABLE_SIZE; i++) {
     if (begin->chunk[i].size != 0) {

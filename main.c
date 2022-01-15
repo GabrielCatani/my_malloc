@@ -4,18 +4,13 @@
 int main(void) {
 
   init_heap(10);
-
-  heap *ptr = heap_head;
   
+  print_heap(heap_head);  
   add_new_chunk(5);
+  print_heap(heap_head);
   add_new_chunk(3);
   add_new_chunk(2);
-
-  ptr = heap_head;
-  while (ptr) {
-    print_heap(ptr);
-    ptr = ptr->next;
-  }
+  add_new_chunk(150);
 
   char *ptr_mem = NULL;
   char c = 'a';
@@ -32,23 +27,31 @@ int main(void) {
       break;
     }
   }
-
-  
-  ptr = heap_head;
+  /*
+  heap *ptr = heap_head;
   while (ptr) {
-    print_heap(ptr);
+    for (int i = 0; i < TABLE_SIZE; i++) {
+      if (heap_head->chunk[i].size > 0) {
+        print_chunk(&heap_head->chunk[i]);
+      }
+    }
     ptr = ptr->next;
   }
-  
-  printf("\nChunk_Size: %d\n", get_chunk_size(heap_head->chunk[chunk_index].memory));
-  
+  */
+  print_heap(heap_head);
   free_chunk(heap_head->chunk[chunk_index].memory);
-
+  print_heap(heap_head);
+  /*
   ptr = heap_head;
   while (ptr) {
-    print_heap(ptr);
+    for (int i = 0; i < TABLE_SIZE; i++) {
+      if (heap_head->chunk[i].size > 0) {
+        print_chunk(&heap_head->chunk[i]);
+      }
+    }    
     ptr = ptr->next;
   }
+  */
   
   return 0;
 }
