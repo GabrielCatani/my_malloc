@@ -7,7 +7,6 @@ int main(void) {
   
   print_heap(heap_head);  
   add_new_chunk(5);
-  print_heap(heap_head);
   add_new_chunk(3);
   add_new_chunk(2);
   add_new_chunk(150);
@@ -27,31 +26,10 @@ int main(void) {
       break;
     }
   }
-  /*
-  heap *ptr = heap_head;
-  while (ptr) {
-    for (int i = 0; i < TABLE_SIZE; i++) {
-      if (heap_head->chunk[i].size > 0) {
-        print_chunk(&heap_head->chunk[i]);
-      }
-    }
-    ptr = ptr->next;
-  }
-  */
+
   print_heap(heap_head);
   free_chunk(heap_head->chunk[chunk_index].memory);
   print_heap(heap_head);
-  /*
-  ptr = heap_head;
-  while (ptr) {
-    for (int i = 0; i < TABLE_SIZE; i++) {
-      if (heap_head->chunk[i].size > 0) {
-        print_chunk(&heap_head->chunk[i]);
-      }
-    }    
-    ptr = ptr->next;
-  }
-  */
   
   return 0;
 }

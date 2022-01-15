@@ -25,19 +25,26 @@ extern heap *heap_head;
 int hash_function(long key);
 int handle_colision(int hashed_key, heap *table);
 /*
- * If heap SMALL: size * TABLE_SIZE
- * If heap BIG: create a new heap size = MMAP_THRESHOLD
+ * (BIG) If size >= MMAP_THRESHOLD: heap_size will be == size
+ * (NOT THAT BIG) Else heap_size will be == MMAP_THRESHOLD;
  */
 void init_heap(int size);
 heap *append_new_heap(int size);
 //
 char is_heap_new(heap *begin);
 char create_first_chunk(heap *begin, int size);
+// Check for free heap, or create one new heap
 heap *find_free_heap(int size);
 char add_new_chunk(int size);
 void print_chunk(chunks *chunk);
 void print_heap(heap *begin);
 void print_detailed_heap(heap *begin);
 void free_chunk(void *memory);
-int get_chunk_size(void *memory);
+chunks *get_chunk(void *memory);
+/*
+ * TODO: merge_free_chunks, to be used inside free_chunk (each time)
+ * chunk is freed.
+ * TODO: if free chunk result in heap with nbr_chunks == 0, free 
+ * the entire heap
+ */
 #endif

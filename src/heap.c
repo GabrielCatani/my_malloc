@@ -283,33 +283,32 @@ void print_detailed_heap(heap *begin) {
 
 void free_chunk(void *memory) {
   char *ptr_mem = (char *)memory;
-  int chunk_size = get_chunk_size(memory);
-
-  for (int i = 0; i < chunk_size; i++) {
+  chunks *chunk_ptr = get_chunk(memory);
+  
+  for (int i = 0; i < chunk_ptr->size; i++) {
     ptr_mem[i] = '\0';
   }
+
+  chunk_ptr->free = 1;
 }
 
-int get_chunk_size(void *memory) {
+chunks *get_chunk(void *memory) {
   int hashed_key = hash_function((long)memory);
   heap *ptr_heap = heap_head;
-  int chunk_size = 0;
   
   while (ptr_heap) {
     if (ptr_heap->chunk[hashed_key].key == (long)memory) {
-      chunk_size = ptr_heap->chunk[hashed_key].size;
-      return chunk_size;
+      return &ptr_heap->chunk[hashed_key];
     }
     else {
       for (int i = 0; i < TABLE_SIZE; i++) {
         if (ptr_heap->chunk[i].key == (long)memory) {
-          chunk_size = ptr_heap->chunk[i].size;
-	  return chunk_size;
+          return &ptr_heap->chunk[i];
 	}
       }
     }
     ptr_heap = ptr_heap->next;
   }
 
-  return -1;
+  return NULL;
 }
