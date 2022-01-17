@@ -289,6 +289,7 @@ void free_chunk(void *memory) {
     ptr_mem[i] = '\0';
   }
 
+  merge_free_chunks(chunk_ptr);
   chunk_ptr->free = 1;
 }
 
@@ -311,4 +312,52 @@ chunks *get_chunk(void *memory) {
   }
 
   return NULL;
+}
+
+void merge_free_chunks(chunks *ref_chunk) {
+  chunks *chunk_to_analyze = NULL;
+  void *memory = NULL;
+  long ref_key = ref_chunk->key;
+   
+  ref_key += ref_chunk->size;
+  memory = (void *)ref_key;
+  chunk_to_analyze = get_chunk(memory);
+  while (chunk_to_analyze && chunk_to_analyze->free) {
+    ref_chunk->size += chunk_to_analyze->size;
+    remove_chunk(chunk_to_analyze->key);
+
+    ref_key = ref_chunk->key;
+    ref_key += ref_chunk->size;
+    memory = (void *)ref_key;
+    chunk_to_analyze = get_chunk(memory);
+  }
+}
+
+void remove_chunk(long key) {
+  int hashed_key = hash_function(key);
+  heap *ptr_heap = heap_head;
+  
+  while (ptr_heap) {
+    if (ptr_heap->chunk[hashed_key].key == key) {
+      ptr_heap->chunk[hashed_key].key = 0;
+      ptr_heap->chunk[hashed_key].size = 0;
+      ptr_heap->chunk[hashed_key].free = 0;
+      ptr_heap->chunk[hashed_key].memory = 0;
+      ptr_heap->nbr_chunks--;
+      return;
+    }
+    else {
+      for (int i = 0; i < TABLE_SIZE; i++) {
+        if (ptr_heap->chunk[i].key == key) {
+          ptr_heap->chunk[i].key = 0;
+	  ptr_heap->chunk[i].size = 0;
+	  ptr_heap->chunk[i].free = 0;
+	  ptr_heap->chunk[i].memory = 0;
+          ptr_heap->nbr_chunks--;
+          return;
+	}
+      }
+    }
+    ptr_heap = ptr_heap->next;
+  }
 }

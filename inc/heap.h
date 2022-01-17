@@ -35,16 +35,17 @@ char is_heap_new(heap *begin);
 char create_first_chunk(heap *begin, int size);
 // Check for free heap, or create one new heap
 heap *find_free_heap(int size);
+//TODO: return new created chunk
 char add_new_chunk(int size);
 void print_chunk(chunks *chunk);
 void print_heap(heap *begin);
 void print_detailed_heap(heap *begin);
 void free_chunk(void *memory);
 chunks *get_chunk(void *memory);
+void merge_free_chunks(chunks *ref_chunk);
 /*
- * TODO: merge_free_chunks, to be used inside free_chunk (each time)
- * chunk is freed.
  * TODO: if free chunk result in heap with nbr_chunks == 0, free 
  * the entire heap
- */
+*/
+void remove_chunk(long key);
 #endif

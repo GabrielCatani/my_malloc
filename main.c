@@ -28,8 +28,17 @@ int main(void) {
   }
 
   print_heap(heap_head);
-  free_chunk(heap_head->chunk[chunk_index].memory);
-  print_heap(heap_head);
+  //  free_chunk(heap_head->chunk[chunk_index].memory);
+  void *start_mem = heap_head->memory;
+  chunks *chunk_ptr = get_chunk(start_mem);
+  void *ref_mem = (void *)((long)start_mem + chunk_ptr->size);
   
+  free_chunk(ref_mem);
+
+  print_heap(heap_head);
+
+  free_chunk(start_mem);
+  
+  print_heap(heap_head);
   return 0;
 }
