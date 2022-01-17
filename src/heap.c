@@ -41,7 +41,7 @@ void init_heap(int size) {
   
   heap_head = mmap(0, sizeof(heap *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   heap_head->chunk = mmap(0, sizeof(chunks *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-  heap_head->chunk = mmap(0, sizeof(chunks) * TABLE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  //heap_head->chunk = mmap(0, sizeof(chunks) * TABLE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   heap_head->capacity = TABLE_SIZE;
   heap_head->nbr_chunks = 0;
   heap_head->memory = mmap(0, heap_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
@@ -66,7 +66,7 @@ heap *append_new_heap(int size) {
   
   ptr->next = mmap(0, sizeof(heap *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   ptr->next->chunk = mmap(0, sizeof(chunks *), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-  ptr->next->chunk = mmap(0, sizeof(chunks) * TABLE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+  //ptr->next->chunk = mmap(0, sizeof(chunks) * TABLE_SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
   ptr->next->capacity = TABLE_SIZE;
   ptr->next->nbr_chunks = 0;
   ptr->next->memory = mmap(0, heap_size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
@@ -205,6 +205,9 @@ void print_chunk(chunks *chunk) {
 
 void print_heap(heap *begin) {
   printf("==========HEAP Header==========\n");
+  if (!begin) {
+    return;
+  }
   printf("HEAP Free Space: %d\nNBR of Chunks: %d\n\n", begin->free_size, begin->nbr_chunks);
 
   int heap_size = 0;
@@ -361,3 +364,23 @@ void remove_chunk(long key) {
     ptr_heap = ptr_heap->next;
   }
 }
+
+void free_heap() {
+  heap *prev = heap_head;
+  int heap_size = 0;
+
+  while (prev) {
+    heap_head = heap_head->next;
+
+    for (int i = 0; i < TABLE_SIZE; i++) {
+      heap_size += prev->chunk[i].size;
+    }
+    
+    munmap(prev->chunk, sizeof (chunks *));
+    munmap(prev->memory, heap_size);
+    munmap(prev, sizeof(heap *));
+    heap_size = 0;
+    prev = heap_head;
+  }
+}
+

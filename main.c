@@ -5,12 +5,12 @@ int main(void) {
 
   init_heap(10);
   
-  print_heap(heap_head);  
   add_new_chunk(5);
   add_new_chunk(3);
   add_new_chunk(2);
   add_new_chunk(150);
-
+  append_new_heap(250);
+  
   char *ptr_mem = NULL;
   char c = 'a';
   int chunk_index = 0;
@@ -27,18 +27,21 @@ int main(void) {
     }
   }
 
-  print_heap(heap_head);
-  //  free_chunk(heap_head->chunk[chunk_index].memory);
-  void *start_mem = heap_head->memory;
-  chunks *chunk_ptr = get_chunk(start_mem);
-  void *ref_mem = (void *)((long)start_mem + chunk_ptr->size);
+  heap *head_ptr = heap_head;
+  while (head_ptr) {
+    print_heap(head_ptr);
+    head_ptr = head_ptr->next;
+  }
+  printf("\n\n------------------------------\n\n");
   
-  free_chunk(ref_mem);
+  free_heap();
 
-  print_heap(heap_head);
-
-  free_chunk(start_mem);
+  head_ptr = heap_head;
   
-  print_heap(heap_head);
+  while (head_ptr) {
+    print_heap(head_ptr);
+    head_ptr = head_ptr->next;
+  }
+
   return 0;
 }
