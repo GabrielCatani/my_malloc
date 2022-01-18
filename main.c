@@ -4,13 +4,13 @@
 int main(void) {
 
   init_heap(10);
-  /*  
+    
+
   add_new_chunk(5);
   add_new_chunk(3);
   add_new_chunk(2);
   add_new_chunk(150);
   append_new_heap(250);
-  */
   
   char *ptr_mem = NULL;
   char c = 'a';

@@ -137,7 +137,7 @@ heap *find_free_heap(int size) {
   return ptr;
 }
 
-char add_new_chunk(int size) {
+void *add_new_chunk(int size) {
   heap *ptr_heap = find_free_heap(size);
   char *ref_ptr = NULL;
   int hashed_key = 0;
@@ -145,7 +145,7 @@ char add_new_chunk(int size) {
   
   if (ptr_heap->nbr_chunks == 0) {
     create_first_chunk(ptr_heap, size);
-    return 0;
+    return ptr_heap->memory;
   }
   else {
     for (int i = 0; i < TABLE_SIZE; i++) {
@@ -153,7 +153,7 @@ char add_new_chunk(int size) {
 	  ptr_heap->chunk[i].free) {
         ptr_heap->chunk[i].free = 0;
 	ptr_heap->free_size -= size;
-	return 0;
+	return ptr_heap->chunk[i].memory;
       }
       else if (ptr_heap->chunk[i].size > size &&
 	  ptr_heap->chunk[i].free) {
@@ -171,12 +171,13 @@ char add_new_chunk(int size) {
 	ptr_heap->chunk[hashed_key].free = 1;
 	ptr_heap->chunk[hashed_key].memory = ref_ptr;
 	ptr_heap->free_size -= size;
-	ptr_heap->nbr_chunks += 1;	
-	return 0;
+	ptr_heap->nbr_chunks += 1;
+
+	return ptr_heap->chunk[hashed_key].memory;
       }
     }   
   }
-  return 1;
+  return NULL;
 }
 
 void print_chunk(chunks *chunk) {
@@ -396,7 +397,9 @@ void free_heap_if_no_chunks() {
   heap *current = NULL;
   int heap_size = 0;
   
-  if (heap_head->nbr_chunks == 0) {
+  if (heap_head->nbr_chunks == 0 ||
+      (heap_head->nbr_chunks == 1 &&
+       get_chunk(heap_head->memory)->free)) {
     for (int i = 0; i < heap_head->capacity; i++) {
       heap_size += heap_head->chunk[i].size;
     }
