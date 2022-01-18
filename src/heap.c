@@ -287,13 +287,16 @@ void print_detailed_heap(heap *begin) {
 void free_chunk(void *memory) {
   char *ptr_mem = (char *)memory;
   chunks *chunk_ptr = get_chunk(memory);
-  
-  for (int i = 0; i < chunk_ptr->size; i++) {
-    ptr_mem[i] = '\0';
-  }
+
+  if (chunk_ptr) {
+    for (int i = 0; i < chunk_ptr->size; i++) {
+      ptr_mem[i] = '\0';
+    }
+    chunk_ptr->free = 1;    
+  }  
 
   merge_free_chunks(chunk_ptr);
-  chunk_ptr->free = 1;
+  free_heap_if_no_chunks();
 }
 
 chunks *get_chunk(void *memory) {
@@ -318,10 +321,14 @@ chunks *get_chunk(void *memory) {
 }
 
 void merge_free_chunks(chunks *ref_chunk) {
+  if (!ref_chunk) {
+    return;
+  }
+
   chunks *chunk_to_analyze = NULL;
   void *memory = NULL;
   long ref_key = ref_chunk->key;
-   
+  
   ref_key += ref_chunk->size;
   memory = (void *)ref_key;
   chunk_to_analyze = get_chunk(memory);
@@ -365,7 +372,7 @@ void remove_chunk(long key) {
   }
 }
 
-void free_heap() {
+void destroy_heap() {
   heap *prev = heap_head;
   int heap_size = 0;
 
@@ -384,3 +391,46 @@ void free_heap() {
   }
 }
 
+void free_heap_if_no_chunks() {
+  heap **prev = NULL;
+  heap *current = NULL;
+  int heap_size = 0;
+  
+  if (heap_head->nbr_chunks == 0) {
+    for (int i = 0; i < heap_head->capacity; i++) {
+      heap_size += heap_head->chunk[i].size;
+    }
+    
+    munmap(heap_head->chunk, sizeof (chunks *));
+    munmap(heap_head->memory, heap_size);
+    current = heap_head;
+    heap_head = heap_head->next;
+    munmap(heap_head, sizeof(heap *));
+    heap_size = 0;
+
+    current = NULL;
+    return;
+  }
+
+  prev = &heap_head;
+  current = heap_head->next;
+  while (current && current->nbr_chunks != 0) {
+    prev = &current;
+    current = current->next;
+  }
+
+  if (!current) {
+    return;
+  }
+
+  for (int i = 0; i < current->capacity; i++) {
+      heap_size += current->chunk[i].size;
+    }
+    
+  munmap(current->chunk, sizeof (chunks *));
+  munmap(current->memory, heap_size);
+  (*prev)->next = current->next;
+  munmap(current, sizeof(heap *));
+
+  current = NULL;
+}

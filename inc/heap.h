@@ -43,6 +43,11 @@ void print_detailed_heap(heap *begin);
 void free_chunk(void *memory);
 chunks *get_chunk(void *memory);
 void merge_free_chunks(chunks *ref_chunk);
+/*
+ * TODO: if free chunk result in heap with nbr_chunks == 0, free 
+ * the entire heap
+*/
 void remove_chunk(long key);
-void free_heap();
+void destroy_heap();
+void free_heap_if_no_chunks();
 #endif
