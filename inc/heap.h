@@ -4,6 +4,7 @@
 #define MMAP_THRESHOLD 128000
 #include <stdio.h>
 #include <sys/mman.h>
+#include <unistd.h>
 typedef struct heap heap;
 typedef struct chunks chunks;
 struct heap {
@@ -30,7 +31,6 @@ int handle_colision(int hashed_key, heap *table);
  */
 void init_heap(int size);
 heap *append_new_heap(int size);
-//
 char is_heap_new(heap *begin);
 char create_first_chunk(heap *begin, int size);
 // Check for free heap, or create one new heap
@@ -45,4 +45,5 @@ void merge_free_chunks(chunks *ref_chunk);
 void remove_chunk(long key);
 void destroy_heap();
 void free_heap_if_no_chunks();
+void *my_memset(void *b, int c, size_t len);
 #endif

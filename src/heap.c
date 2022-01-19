@@ -180,6 +180,7 @@ void *add_new_chunk(int size) {
   return NULL;
 }
 
+//TODO fix memory printing
 void print_chunk(chunks *chunk) {
   printf("==========CHUNK Header==========\n");
   printf("Chunk Key: %lu\nSize: %d\n", chunk->key, chunk->size);
@@ -198,6 +199,12 @@ void print_chunk(chunks *chunk) {
     else {
       printf("\033[0;31m0\033[0m");
     }
+  }
+
+  printf("\n");
+  unsigned char *ptr = (unsigned char *)chunk->memory;
+  for (int i = 0; i < chunk->size; i++) {
+    write(1, &ptr[i], 1);
   }
 
   printf("\n\n===============================\n");  
@@ -280,7 +287,7 @@ void print_detailed_heap(heap *begin) {
   //Print Chunks details
   for (int i = 0; i < TABLE_SIZE; i++) {
     if (begin->chunk[i].size != 0) {
-      printf("Chunk key: %lu -> Size: %d -> is Free: %d -> Memory: %s\n", begin->chunk[i].key, begin->chunk[i].size, begin->chunk[i].free, begin->chunk[i].memory);
+      printf("Chunk key: %lu -> Size: %d -> is Free: %d -> Memory: %lu\n", begin->chunk[i].key, begin->chunk[i].size, begin->chunk[i].free, (long)begin->chunk[i].memory);
     }
   }
 }
@@ -436,4 +443,15 @@ void free_heap_if_no_chunks() {
   munmap(current, sizeof(heap *));
 
   current = NULL;
+}
+
+void *my_memset(void *b, int c, size_t len) {
+  unsigned char *ptr = NULL;
+
+  ptr = (unsigned char *)b;
+  while (len-- > 0) {
+    ptr[len] = (unsigned char)c;
+  }
+
+  return b;
 }
