@@ -22,8 +22,9 @@ SRC_OBJS := $(addprefix $(OBJS_SRC_PATH), $(SRC_NAMES:.c=.o))
 
 all: $(TARGET)
 
-$(TARGET): $(SRC)
-	@$(CC) $(FLAGS) $(DEBUG) $(INC) $(SRC) -c -o $@
+$(TARGET): $(SRC_OBJS)
+	@ar rc $(TARGET) $(SRC_OBJS)
+	@ranlib $(TARGET)
 
 test: $(SRC_OBJS)
 	@$(CC) $(FLAGS) $(DEBUG) $(INC) $(TEST) $(SRC_OBJS) -o $@

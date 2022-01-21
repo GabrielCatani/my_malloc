@@ -37,13 +37,16 @@ char create_first_chunk(heap *begin, int size);
 heap *find_free_heap(int size);
 void *add_new_chunk(int size);
 void print_chunk(chunks *chunk);
-void print_heap(heap *begin);
+void print_heap_section(heap *begin);
+void print_full_heap();
 void print_detailed_heap(heap *begin);
 void free_chunk(void *memory);
 chunks *get_chunk(void *memory);
 void merge_free_chunks(chunks *ref_chunk);
+void *enlarge_allocation(void *memory, int new_size);
 void remove_chunk(long key);
 void destroy_heap();
 void free_heap_if_no_chunks();
 void *my_memset(void *b, int c, size_t len);
+heap *get_heap_section(void *memory);
 #endif
