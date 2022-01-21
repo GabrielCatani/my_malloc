@@ -1,5 +1,4 @@
 #include "my_malloc.h"
-#include <unistd.h>
 
 int main(void) {
 

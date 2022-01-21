@@ -7,47 +7,60 @@ and the function free().
 
 ## Usage ##
 
-### --WIP-- ###
+##### Static Library #####
+
+      make //generates static library 'my_malloc'
+
+To use the lib, with a program:
+
+      gcc your_program.c -L. -lmy_malloc -I inc/ -o you_executable
+
+
+##### Testing my_malloc #####
+
+      make test
+
+Run tests
+
+      ./test
 
 ## Tackling the problem ##
 
-The goal of the project is straight forward: use the mmap sys/call to retrieve memory to the user.
+The goal of the project is straight forward: use the mmap syscall to retrieve memory to the user.
 The trick is to do it efficently, calling mmap as few times as possible. In order to do it, at each
-user calls, instead of inly retriveing the amount asked, the function will fecth a big chunk fo memory, and
+user calls, instead of only retriveing the amount of memory asked by the user, the function will fecth a big chunk fo memory, and
 manage memory (rertieving and freeing it) as the user needs it.
 
 ## Data Structures ##
 
-Once the first mmap is called, I will retrieve a big chunk of memory (greater then the user asked), and categorize this in two types:
+#### Heap Sections ####
 
-#### Used chunks ####
-   Part of the memory returned from the first call to mmap, that will be retrieved to the user, with the size requested.
+  Once the first mmap is called, the memory returned by it is store in a **heap section** object, which basically is the memory returned by
+  mmap with a header that contains info. about that section of memory. With new calls to malloc (and/or realloc, calloc, and free),
+  in case the first memory has no more space, a new **heap section** is created. The heap sections are organized in a single **linked list**.
 
-#### Free chunks ###
-   The rest of the memory returned from mmap (not used/asked by the user).
+  Each heap section is divided into chunks, that are returned to the user, and are divided into two types.
 
+  The memory of each heap section is organized into a **hashtable**, in which each entry is a chunk.
 
-Wether been a used or free chunck, both categories will have the following elements:
+##### Heap header #####
 
-    - **start**: starting address of chunk
-    - **size**: size of chunk
-    - **end**: ending address of chunk (start + size)
+      chunks *chunk; // Hashtable of chunks
+      int capacity; // Max number of entries of hashtable
+      int nbr_chunks; // number of chunks
+      void *memory; // memory section returned from mmap syscall
+      int free_size; // highest free chunks size
+      heap *next; // next heap_section
 
-To keep track, and easy to add, remove and use, each category of chunk will have its own HashTable, using it start as key:
+#### Chunks ####
 
+  What differeciates a chunk is the header parameter 'free', that indicates if the chunks is used or free.
+  Chunks are the blocks returned for the user in order to use all mallloc functions (malloc, realloc, calloc and free).
 
-#### Hashtable chunk example ####
+##### Chunk header #####
 
-   ```
-   HashTable free_chunks;
-
-   free_chunks->table[0x0000000000784ab] //Fictional start of address of the refered free chunk
-
-   /*
-   [0x0000000000784ab]
-   -> start = 0x0000000000784ab;
-   -> size  = 8;
-   -> end   = 0x0000000000784B3
-   */
-   ```
-   
+      long key; // key of chunk (used by hashfunction, to add chunk on hashtable
+      int size; // size of memory of chunk
+      char free; // free == 1 -> free chunk; free == 0 -> used chunk
+      void *memory; // memory from heap section, pointed by chunk
+    

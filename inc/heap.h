@@ -29,17 +29,13 @@ int handle_colision(int hashed_key, heap *table);
  * (BIG) If size >= MMAP_THRESHOLD: heap_size will be == size
  * (NOT THAT BIG) Else heap_size will be == MMAP_THRESHOLD;
  */
-void init_heap(int size);
+char init_heap(int size);
 heap *append_new_heap(int size);
 char is_heap_new(heap *begin);
 char create_first_chunk(heap *begin, int size);
 // Check for free heap, or create one new heap
 heap *find_free_heap(int size);
 void *add_new_chunk(int size);
-void print_chunk(chunks *chunk);
-void print_heap_section(heap *begin);
-void print_full_heap();
-void print_detailed_heap(heap *begin);
 void free_chunk(void *memory);
 chunks *get_chunk(void *memory);
 void merge_free_chunks(chunks *ref_chunk);
